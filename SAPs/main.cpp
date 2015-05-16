@@ -5,6 +5,10 @@ mpz_class CCCounter;
 moodycamel::ConcurrentQueue<Parameters> q;
 moodycamel::ProducerToken ptok(q);
 
+//move checking to before recursive iteration to refrain it from copying unnecessary variables
+//move some variables out of the struct as they are constant though all the recursive iterations
+
+
 void printVector(std::vector<std::vector<bool> > &grid)
 {
     for ( std::vector<std::vector<bool>>::size_type i = 0; i < grid.size(); ++i )
@@ -216,6 +220,7 @@ void HostWorkerFunc(unsigned int n, bool quiet, int d)
 
 int main(int argc,char *argv[])
 {
+    //initialize some parameters
     int SAPlength = 0;
     bool quiet = false;
     bool superquiet = false;

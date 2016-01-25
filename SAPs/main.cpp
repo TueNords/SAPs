@@ -63,6 +63,22 @@ void initForbidden(std::vector<std::vector<bool>> &grid, const unsigned int leng
     }
 }
 
+
+void FillLookupTable(std::vector<std::vector<bool>> &g, const unsigned int length)
+{
+    int starty=(length-6)/2+1;
+
+    for ( int i = 0; i < (int)grid.size()-1; ++i )
+    {
+        for (int j = 0; j < (int)grid.at(i).size()-1; ++j)
+        {
+            grid.at(i).at(j)=abs(i-1)+abs(j-starty);
+        }
+    }
+}
+
+
+
 void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth)
 {
     if (!grid.at(row).at(col))
@@ -300,10 +316,16 @@ int main(int argc,char *argv[])
         std::vector< std::vector< bool > > grid ( height, std::vector<bool> ( width, 0 ) );
 
         initForbidden(grid,SAPlength);
+
+        std::vector< std::vector< int > > lookuptable ( height, std::vector<int> ( width, 0 ) );
+
+        FillLookupTable(lookuptable, SAPlength);
+
         if (!quiet && !superquiet)
         {
             std::cout << "  Complete"<< std::endl;
             printVector(grid);
+            printVector(lookuptable);
             std::cout << "Initialize queue...";
             std::cout << "  Complete"<< std::endl;
             std::cout << "Produce and Queue subjobs...";

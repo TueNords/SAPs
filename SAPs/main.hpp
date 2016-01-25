@@ -12,7 +12,6 @@
 #include "concurrentqueue.hpp"  //lockfree queue
 #include <gmpxx.h>              //MPIR of GNU-MP BigInt libraries
 
-
 //Object to store all parameters for the queue
 class Parameters
 {
@@ -27,6 +26,8 @@ class Parameters
 
 void printVector(std::vector<std::vector<bool> > &grid);                                  //print the vector to the screen for debugging purposes
 void initForbidden(std::vector<std::vector<bool>> &grid, const unsigned int length);      //set primary off-limits fields
+void FillLookupTable(std::vector<std::vector<bool>> &g, const unsigned int length);       //generate lookuptable
+
 
 void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth);    //Produce queue jobs
 void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining);       //General walking function

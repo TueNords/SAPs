@@ -5,74 +5,66 @@ mpz_class CCCounter;
 moodycamel::ConcurrentQueue<Parameters> q;
 moodycamel::ProducerToken ptok(q);
 
-void printVector(std::vector<std::vector<bool> > &grid)
+template <typename VecT>
+void printVector(VecT &grid)
 {
-    for ( std::vector<std::vector<bool>>::size_type i = 0; i < grid.size(); ++i )
+    int width=0;
+    if (grid.at(grid.size()-1).at(grid.at(0).size()-1)>9)
+		width=2;
+    if (grid.at(grid.size()-1).at(grid.at(0).size()-1)>99)
+		width=2;	
+    
+    
+    for ( unsigned int i = 0; i < grid.size(); ++i )
         {
-            for ( std::vector<bool>::size_type j = 0; j < grid.at(i).size(); ++j )
+            for ( unsigned int j = 0; j < grid.at(i).size(); ++j )
             {
-                //std::cout << grid[i][j] << ' ';
-                std::cout << grid.at(i).at(j);
+                std::cout << std::setfill(' ') << std::setw(width) << grid.at(i).at(j) << " ";
             }
             std::cout << std::endl;
         }
 }
 
-void initForbidden(std::vector<std::vector<bool>> &grid, const unsigned int length)
+void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length)
 {
     int starty=(length-6)/2+1;
+    
+    if (length==4)
+		starty=1;
 
-    for ( std::vector< std::vector<bool> >::size_type i = 0; i < grid.size(); ++i )
-        {
-            grid.at(i).at(0)=1;
-            grid.at(i).at(grid.at(i).size()-1)=1;
-            if (i<=(length-6)/2 && length>4) //if length == 4, no other fields should be off limits, else the grid would become too small.
-            {
-                grid.at(i).at(1)=1;
-            }
-        }
-    for ( std::vector< std::vector<bool> >::size_type i = 0; i < grid.at(0).size(); ++i )
-        {
-            grid.at(0).at(i)=1;
-            grid.at(grid.size()-1).at(i)=1;
-        }
-
-    if (length>4)
+    for (unsigned int i = 0; i < lookuptable.size(); ++i )
     {
-        for ( int i = 1; i < (int)grid.size()-1; ++i )
+        grid.at(i).at(0)=1;
+        grid.at(i).at(grid.at(i).size()-1)=1;
+        for (unsigned int j = 0; j < lookuptable.at(i).size(); ++j)
         {
-            for (int j = 1; j < (int)grid.at(i).size()-1; ++j)
+            int temp=1;
+			
+			grid.at(0).at(j)=1;
+            grid.at(grid.size()-1).at(j)=1;
+			
+            if ((int)i == starty && j==1)
             {
-                if (i<starty)
-                {
-                   if (abs(i-starty)+abs(j-1)>(int)length/2-1)
-                    {
-                        grid.at(i).at(j)=1;
-                    }
-                }
-                else
-                {
-                    if (abs(i-starty)+abs(j-1)>(int)length/2)
-                    {
-                        grid.at(i).at(j)=1;
-                    }
-                }
-
-            }
-        }
-    }
-}
-
-
-void FillLookupTable(std::vector<std::vector<bool>> &g, const unsigned int length)
-{
-    int starty=(length-6)/2+1;
-
-    for ( int i = 0; i < (int)grid.size()-1; ++i )
-    {
-        for (int j = 0; j < (int)grid.at(i).size()-1; ++j)
-        {
-            grid.at(i).at(j)=abs(i-1)+abs(j-starty);
+				lookuptable.at(i).at(j)=0;
+			}
+            else
+            {           
+				if ((int)i<starty && j==2)
+				{
+					temp=3;
+				}
+				
+				if ((int)i<starty && j==1)
+				{
+					grid.at(i).at(j)=1;
+				}
+				
+				int value = abs(j-1)+abs(i-starty-1)+temp;
+				lookuptable.at(i).at(j)=value;
+				
+				if (abs(i-starty)+abs(j-1)+value>(int)length)
+					grid.at(i).at(j)=1;
+			}
         }
     }
 }
@@ -233,8 +225,6 @@ void HostWorkerFunc(unsigned int n, bool quiet, int d)
 int main(int argc,char *argv[])
 {
     int SAPlength = 0;
-    bool quiet = false;
-    bool superquiet = false;
     int depth=7;
     int ReportRate = 30;
     std::ofstream outputFile;
@@ -246,7 +236,6 @@ int main(int argc,char *argv[])
         if (argc <= 1)
         {
             SAPlength = checkInput();
-            std::cout << "SAP length is: " << SAPlength << std::endl << std::endl;
         }
         else
         {
@@ -255,31 +244,15 @@ int main(int argc,char *argv[])
             if (!(ss >> x))
             {
                 SAPlength = checkInput();
-                std::cout << "SAP length is: " << SAPlength << std::endl << std::endl;
             }
             else
             {
                 SAPlength = x;
             }
-            if (argc > 2)
-            {
-                std::string arg2(argv[2]);
-                if (arg2=="-q")
-                {
-                    quiet=true;
-                }
-                if (arg2=="-qq")
-                {
-                    superquiet=true;
-                }
-            }
-
         }
-
-        if (!quiet && !superquiet)
-        {
-            std::cout << "Initializing startup variables" << std::endl;
-        }
+        
+        std::cout << "SAP length is: " << SAPlength << std::endl << std::endl;
+		std::cout << "Initializing startup variables" << std::endl;
 
         //calculate the dimensions of the grid the program is going to walk over.
         int width=SAPlength/2+2;
@@ -309,27 +282,19 @@ int main(int argc,char *argv[])
         mpz_class counter;
 
         //initialize grid and set primary off-limits fields
-        if (!quiet && !superquiet)
-        {
-            std::cout <<width << "x" << height << " Grid initializing...";
-        }
+
+		std::cout <<width << "x" << height << " Grid initializing...";
         std::vector< std::vector< bool > > grid ( height, std::vector<bool> ( width, 0 ) );
-
-        initForbidden(grid,SAPlength);
-
         std::vector< std::vector< int > > lookuptable ( height, std::vector<int> ( width, 0 ) );
 
-        FillLookupTable(lookuptable, SAPlength);
+        InitMaps(lookuptable, grid ,SAPlength);
 
-        if (!quiet && !superquiet)
-        {
-            std::cout << "  Complete"<< std::endl;
-            printVector(grid);
-            printVector(lookuptable);
-            std::cout << "Initialize queue...";
-            std::cout << "  Complete"<< std::endl;
-            std::cout << "Produce and Queue subjobs...";
-        }
+		std::cout << "  Complete"<< std::endl;
+		printVector(grid);
+		printVector(lookuptable);
+		std::cout << "Initialize queue...";
+		std::cout << "  Complete"<< std::endl;
+		std::cout << "Produce and Queue subjobs...";
 
         //Set first field to forbidden and force first step to right
         grid.at(startrow).at(1)=true;
@@ -338,12 +303,9 @@ int main(int argc,char *argv[])
 
         IncreaseCCC(counter);
 
-        if (!quiet && !superquiet)
-        {
-            std::cout << "  Complete"<< std::endl;
-            std::cout << "Approximately " << q.size_approx() << " items in queue" <<std::endl;
-            std::cout << "Starting Consumer Threads..."<<std::endl;
-        }
+		std::cout << "  Complete"<< std::endl;
+		std::cout << "Approximately " << q.size_approx() << " items in queue" <<std::endl;
+		std::cout << "Starting Consumer Threads..."<<std::endl;
 
         unsigned int queueSize = q.size_approx();
 
@@ -355,62 +317,44 @@ int main(int argc,char *argv[])
             switch(concurentThreadsSupported)
             {
                 case 0:
-                    if (!quiet && !superquiet)
-                    {
-                        std::cout << "Request for amount of threads failed, spawning 0 additional threads for safety" <<std::endl;
-                    }
+					std::cout << "Request for amount of threads failed, spawning 0 additional threads for safety" <<std::endl;
                     break;
                 case 1:
-                    if (!quiet && !superquiet)
-                    {
-                        std::cout << "This Machine reports: 1 available thread, 0 additional threads will be spawned" <<std::endl;
-                    }
+                    std::cout << "This Machine reports: 1 available thread, 0 additional threads will be spawned" <<std::endl;
                     break;
                 default:
                     concurentThreadsUsed = concurentThreadsSupported-1;
-                    if (!quiet && !superquiet)
-                    {
-                        std::cout << "This Machine reports: "<< concurentThreadsSupported << " available threads." <<std::endl;
-                        std::cout << concurentThreadsUsed << " additional Threads will be spawned (main thread will also occupy one thread)." <<std::endl;
-                    }
+					std::cout << "This Machine reports: "<< concurentThreadsSupported << " available threads." <<std::endl;
+					std::cout << concurentThreadsUsed << " additional Threads will be spawned (main thread will also occupy one thread)." <<std::endl;
             }
 
 
             for (unsigned int i = 0; i<concurentThreadsUsed; ++i)
             {
-                if (!quiet && !superquiet)
-                {
-                    std::cout << "Thread " << i+1 << "/" << concurentThreadsUsed << "spawned" <<std::endl;
-                }
+				std::cout << "Thread " << i+1 << "/" << concurentThreadsUsed << "spawned" <<std::endl;
                 threads.emplace_back(std::thread(WorkerFunc));
             }
 
-            if (!quiet && !superquiet)
-            {
-                std::cout << "  Complete"<<std::endl;
-                std::cout << "Waiting for Threads to Finish..." << std::endl;
-            }
+			std::cout << "  Complete"<<std::endl;
+			std::cout << "Waiting for Threads to Finish..." << std::endl;
+
         }
 
+		bool superquiet = false;
         HostWorkerFunc(queueSize, superquiet, ReportRate);
 
         for(auto& thread : threads)
         {
             thread.join();
         }
-
-        if (!quiet && !superquiet)
-        {
-            std::cout << "Finished!" << std::endl << "Total Correct Paths: ";
-        }
+        
+		std::cout << "Finished!" << std::endl << "Total Correct Paths: ";
 
         std::cout << ReadCCC() << std::endl;
         outputFile << SAPlength << ";" << ReadCCC() << std::endl;
         //end program successfully
-        if (!quiet && !superquiet)
-        {
-            std::cout << "Program finished"<< std::endl;
-        }
+
+        std::cout << "Program finished"<< std::endl;
     }
 
     outputFile.close();

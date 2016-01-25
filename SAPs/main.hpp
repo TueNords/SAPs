@@ -7,6 +7,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <iomanip>
 
 //external libraries
 #include "concurrentqueue.hpp"  //lockfree queue
@@ -24,9 +25,11 @@ class Parameters
         int remaining;
 };
 
-void printVector(std::vector<std::vector<bool> > &grid);                                  //print the vector to the screen for debugging purposes
-void initForbidden(std::vector<std::vector<bool>> &grid, const unsigned int length);      //set primary off-limits fields
-void FillLookupTable(std::vector<std::vector<bool>> &g, const unsigned int length);       //generate lookuptable
+template <typename VecT>
+void printVector(VecT &grid);                                  //print the vector to the screen for debugging purposes
+
+//generate distance lookuptable && set primary off-limits fields 
+void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length);       
 
 
 void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth);    //Produce queue jobs

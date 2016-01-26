@@ -1,2 +1,0 @@
-sudo g++ main.cpp -O2 -std=c++11 -lgmp -lgmpxx -lpthread -m64 -Wall -march=native -mtune=native
-

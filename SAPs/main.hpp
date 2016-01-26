@@ -31,8 +31,8 @@ void printVector(VecT &grid);                                  //print the vecto
 void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length);       
 
 
-void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth);    //Produce queue jobs
-void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining);       //General walking function
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth);    //Produce queue jobs
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining);       //General walking function
 
 void IncreaseCCC(mpz_class &Incr);  //Thread-safe increase of the total counter
 mpz_class ReadCCC();                //Thread-safe read from the total counter, not absolutely necessary

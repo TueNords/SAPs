@@ -69,7 +69,7 @@ void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vecto
     }
 }
 
-void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth)
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth)
 {
     if (!grid.at(row).at(col))
     {
@@ -87,10 +87,10 @@ void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const
                     grid.at(row).at(col)=true;
                     if (remaining>=length-depth)
                     {
-                        ProduceStep(grid,counter,startrow,length,row,col+1,remaining-1,depth);
-                        ProduceStep(grid,counter,startrow,length,row+1,col,remaining-1,depth);
-                        ProduceStep(grid,counter,startrow,length,row,col-1,remaining-1,depth);
-                        ProduceStep(grid,counter,startrow,length,row-1,col,remaining-1,depth);
+                        ProduceStep(lookuptable,grid,counter,startrow,length,row,col+1,remaining-1,depth);
+                        ProduceStep(lookuptable,grid,counter,startrow,length,row+1,col,remaining-1,depth);
+                        ProduceStep(lookuptable,grid,counter,startrow,length,row,col-1,remaining-1,depth);
+                        ProduceStep(lookuptable,grid,counter,startrow,length,row-1,col,remaining-1,depth);
                     }
                     else
                     {
@@ -130,30 +130,26 @@ void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const
     }
 }
 
-void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining)
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining)
 {
-    if (!grid.at(row).at(col))
+    if (!grid[row][col])
     {
-        if (row==startrow+1 && col==1 && remaining==1)
+        if (lookuptable[row][col]==1 && remaining==1)
         {
             ++counter;
         }
         else
         {
-            if (abs(row-startrow-1)+abs(col-1) <= remaining)
+            if (lookuptable[row][col] <= remaining)
             {
-                if (row==startrow+1 && col==1 && remaining>1);
-                else
-                {
-                    grid.at(row).at(col)=true;
+				grid[row][col]=true;
 
-                    TakeStep(grid,counter,startrow,row,col+1,remaining-1);
-                    TakeStep(grid,counter,startrow,row+1,col,remaining-1);
-                    TakeStep(grid,counter,startrow,row,col-1,remaining-1);
-                    TakeStep(grid,counter,startrow,row-1,col,remaining-1);
+				TakeStep(lookuptable,grid,counter,startrow,row,col+1,remaining-1);
+				TakeStep(lookuptable,grid,counter,startrow,row+1,col,remaining-1);
+				TakeStep(lookuptable,grid,counter,startrow,row,col-1,remaining-1);
+				TakeStep(lookuptable,grid,counter,startrow,row-1,col,remaining-1);
 
-                    grid.at(row).at(col)=false;
-                }
+				grid[row][col]=false;
             }
         }
     }
@@ -202,7 +198,7 @@ void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, 
 
 		while (q.try_dequeue_from_producer(ptok, recvparm))
 		{
-			TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
 			if (++i%d==0)
 			{
 				std::cout << q.size_approx() << "/" << n << " " << (1.0-((float)q.size_approx()/(float)n))*100.0 << "%" << std::endl;
@@ -213,7 +209,7 @@ void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, 
 	{
 		while (q.try_dequeue_from_producer(ptok, recvparm))
 		{
-			TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
 		}
 	}
     IncreaseCCC(counter);
@@ -296,7 +292,7 @@ int main(int argc,char *argv[])
         //Set first field to forbidden and force first step to right
         grid.at(startrow).at(1)=true;
 
-        ProduceStep(grid,counter,startrow,SAPlength,startrow,2,SAPlength-1,depth);
+        ProduceStep(lookuptable,grid,counter,startrow,SAPlength,startrow,2,SAPlength-1,depth);
 
         IncreaseCCC(counter);
 

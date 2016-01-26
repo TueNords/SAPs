@@ -69,8 +69,6 @@ void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vecto
     }
 }
 
-
-
 void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth)
 {
     if (!grid.at(row).at(col))
@@ -99,7 +97,6 @@ void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const
                         Parameters taskparm;
                         taskparm.grid = grid;
                         taskparm.startrow = startrow;
-                        taskparm.length = length;
                         taskparm.remaining = remaining-1;
                         if (!grid.at(row).at(col+1))
                         {
@@ -133,7 +130,7 @@ void ProduceStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const
     }
 }
 
-void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining)
+void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining)
 {
     if (!grid.at(row).at(col))
     {
@@ -150,10 +147,10 @@ void TakeStep(std::vector<std::vector<bool>> &grid, mpz_class &counter, const in
                 {
                     grid.at(row).at(col)=true;
 
-                    TakeStep(grid,counter,startrow,length,row,col+1,remaining-1);
-                    TakeStep(grid,counter,startrow,length,row+1,col,remaining-1);
-                    TakeStep(grid,counter,startrow,length,row,col-1,remaining-1);
-                    TakeStep(grid,counter,startrow,length,row-1,col,remaining-1);
+                    TakeStep(grid,counter,startrow,row,col+1,remaining-1);
+                    TakeStep(grid,counter,startrow,row+1,col,remaining-1);
+                    TakeStep(grid,counter,startrow,row,col-1,remaining-1);
+                    TakeStep(grid,counter,startrow,row-1,col,remaining-1);
 
                     grid.at(row).at(col)=false;
                 }
@@ -189,36 +186,36 @@ int checkInput()
     return n;
 }
 
-void WorkerFunc()
+void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, int d, bool isHost)
 {
     mpz_class counter;
     Parameters recvparm;
-    while (q.try_dequeue_from_producer(ptok, recvparm))
-    {
-        TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.length,recvparm.row,recvparm.col,recvparm.remaining);
-    }
-    IncreaseCCC(counter);
-}
+    
+	if (isHost==1)
+	{
+		int i=0;
 
-void HostWorkerFunc(unsigned int n, bool quiet, int d)
-{
-    mpz_class counter;
-    Parameters recvparm;
-    int i=0;
+		if (n==0)
+		{
+			n=1;
+		}
 
-    if (n==0)
-    {
-        n=1;
-    }
-
-    while (q.try_dequeue_from_producer(ptok, recvparm))
-    {
-        TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.length,recvparm.row,recvparm.col,recvparm.remaining);
-        if (++i%d==0 && !quiet)
-        {
-            std::cout << q.size_approx() << "/" << n << " " << (1.0-((float)q.size_approx()/(float)n))*100.0 << "%" << std::endl;
-        }
-    }
+		while (q.try_dequeue_from_producer(ptok, recvparm))
+		{
+			TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+			if (++i%d==0)
+			{
+				std::cout << q.size_approx() << "/" << n << " " << (1.0-((float)q.size_approx()/(float)n))*100.0 << "%" << std::endl;
+			}
+		}
+	}
+	else
+	{
+		while (q.try_dequeue_from_producer(ptok, recvparm))
+		{
+			TakeStep(recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+		}
+	}
     IncreaseCCC(counter);
 }
 
@@ -332,7 +329,7 @@ int main(int argc,char *argv[])
             for (unsigned int i = 0; i<concurentThreadsUsed; ++i)
             {
 				std::cout << "Thread " << i+1 << "/" << concurentThreadsUsed << "spawned" <<std::endl;
-                threads.emplace_back(std::thread(WorkerFunc));
+                threads.emplace_back(std::thread(WorkerFunc,std::ref(lookuptable),0,0,false));
             }
 
 			std::cout << "  Complete"<<std::endl;
@@ -340,8 +337,7 @@ int main(int argc,char *argv[])
 
         }
 
-		bool superquiet = false;
-        HostWorkerFunc(queueSize, superquiet, ReportRate);
+        WorkerFunc(std::ref(lookuptable),queueSize, ReportRate, true);
 
         for(auto& thread : threads)
         {

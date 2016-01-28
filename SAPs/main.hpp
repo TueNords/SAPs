@@ -17,7 +17,7 @@
 class Parameters
 {
     public:
-        std::vector< std::vector< bool > > grid;
+        std::vector< std::vector< int > > grid;
         unsigned int startrow;
         unsigned int row;
         unsigned int col;
@@ -28,11 +28,11 @@ template <typename VecT>
 void printVector(VecT &grid);                                  //print the vector to the screen for debugging purposes
 
 //generate distance lookuptable && set primary off-limits fields 
-void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length);       
+void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<int>> &grid, const unsigned int length);       
 
-bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, unsigned int row, unsigned int col, int remaining);
-void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth);    //Produce queue jobs
-void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, unsigned int row, unsigned int col, int remaining);       //General walking function
+bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter, unsigned int row, unsigned int col, int remaining);
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth);    //Produce queue jobs
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter, const unsigned int &startrow, unsigned int row, unsigned int col, int remaining);       //General walking function
 
 void IncreaseCCC(mpz_class &Incr);  //Thread-safe increase of the total counter
 mpz_class ReadCCC();                //Thread-safe read from the total counter, not absolutely necessary

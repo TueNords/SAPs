@@ -25,7 +25,7 @@ void printVector(VecT &grid)
         }
 }
 
-void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length)
+void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<int>> &grid, const unsigned int length)
 {
     unsigned int starty=(length-6)/2+1;
     
@@ -69,7 +69,7 @@ void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vecto
     }
 }
 
-bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter,unsigned int row,unsigned int col, int remaining)
+bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter,unsigned int row,unsigned int col, int remaining)
 {
     if (!grid[row][col])
     {
@@ -91,7 +91,7 @@ bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::
     return false;
 }
 
-void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth)
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth)
 {
     if (CheckStep(lookuptable,grid,counter,row,col,remaining))
 	{
@@ -138,7 +138,7 @@ void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std
 	}
 }
 
-void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow,unsigned int row,unsigned int col, int remaining)
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<int>> &grid, mpz_class &counter, const unsigned int &startrow,unsigned int row,unsigned int col, int remaining)
 {
 	if (CheckStep(lookuptable,grid,counter,row,col,remaining))
 	{
@@ -321,7 +321,7 @@ int main(int argc,char *argv[])
         //initialize grid and set primary off-limits fields
 
 		std::cout <<width << "x" << height << " Grid initializing...";
-        std::vector< std::vector< bool > > grid ( height, std::vector<bool> ( width, 0 ) );
+        std::vector< std::vector< int > > grid ( height, std::vector<int> ( width, 0 ) );
         std::vector< std::vector< int > > lookuptable ( height, std::vector<int> ( width, 0 ) );
 
         InitMaps(lookuptable, grid ,static_cast<unsigned int>(SAPlength));

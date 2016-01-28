@@ -12,7 +12,7 @@ void printVector(VecT &grid)
     if (grid.at(grid.size()-1).at(grid.at(0).size()-1)>9)
 		width=2;
     if (grid.at(grid.size()-1).at(grid.at(0).size()-1)>99)
-		width=2;	
+		width=3;	
     
     
     for ( unsigned int i = 0; i < grid.size(); ++i )
@@ -27,34 +27,34 @@ void printVector(VecT &grid)
 
 void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length)
 {
-    int starty=(length-6)/2+1;
+    unsigned int starty=(length-6)/2+1;
     
     if (length==4)
 		starty=1;
 
-    for (unsigned int i = 0; i < lookuptable.size(); ++i )
+    for (size_t i = 0; i < lookuptable.size(); ++i )
     {
         grid.at(i).at(0)=1;
         grid.at(i).at(grid.at(i).size()-1)=1;
-        for (unsigned int j = 0; j < lookuptable.at(i).size(); ++j)
+        for (size_t j = 0; j < lookuptable.at(i).size(); ++j)
         {
             int temp=1;
 			
 			grid.at(0).at(j)=1;
             grid.at(grid.size()-1).at(j)=1;
 			
-            if ((int)i == starty && j==1)
+            if (i == starty && j==1)
             {
 				lookuptable.at(i).at(j)=0;
 			}
             else
             {           
-				if ((int)i<starty && j==2)
+				if (i<starty && j==2)
 				{
 					temp=3;
 				}
 				
-				if ((int)i<starty && j==1)
+				if (i<starty && j==1)
 				{
 					grid.at(i).at(j)=1;
 				}
@@ -62,97 +62,95 @@ void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vecto
 				int value = abs(j-1)+abs(i-starty-1)+temp;
 				lookuptable.at(i).at(j)=value;
 				
-				if (abs(i-starty)+abs(j-1)+value>(int)length)
+				if (static_cast<unsigned int>(abs(i-starty)+abs(j-1)+value)>length)
 					grid.at(i).at(j)=1;
 			}
         }
     }
 }
 
-void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth)
-{
-    if (!grid.at(row).at(col))
-    {
-        if (row==startrow+1 && col==1 && remaining==1)
-        {
-            ++counter;
-        }
-        else
-        {
-            if (abs(row-startrow-1)+abs(col-1) <= remaining)
-            {
-                if (row==startrow+1 && col==1 && remaining>1);
-                else
-                {
-                    grid.at(row).at(col)=true;
-                    if (remaining>=length-depth)
-                    {
-                        ProduceStep(lookuptable,grid,counter,startrow,length,row,col+1,remaining-1,depth);
-                        ProduceStep(lookuptable,grid,counter,startrow,length,row+1,col,remaining-1,depth);
-                        ProduceStep(lookuptable,grid,counter,startrow,length,row,col-1,remaining-1,depth);
-                        ProduceStep(lookuptable,grid,counter,startrow,length,row-1,col,remaining-1,depth);
-                    }
-                    else
-                    {
-                        Parameters taskparm;
-                        taskparm.grid = grid;
-                        taskparm.startrow = startrow;
-                        taskparm.remaining = remaining-1;
-                        if (!grid.at(row).at(col+1))
-                        {
-                            taskparm.row = row;
-                            taskparm.col = col+1;
-                            q.enqueue(ptok, taskparm);
-                        }
-                        if (!grid.at(row+1).at(col))
-                        {
-                            taskparm.row = row+1;
-                            taskparm.col = col;
-                            q.enqueue(ptok, taskparm);
-                        }
-                        if (!grid.at(row).at(col-1))
-                        {
-                            taskparm.row = row;
-                            taskparm.col = col-1;
-                            q.enqueue(ptok, taskparm);
-                        }
-                        if (!grid.at(row-1).at(col))
-                        {
-                            taskparm.row = row-1;
-                            taskparm.col = col;
-                            q.enqueue(ptok, taskparm);
-                        }
-                    }
-                    grid.at(row).at(col)=false;
-                }
-            }
-        }
-    }
-}
-
-void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining)
+bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter,unsigned int row,unsigned int col, int remaining)
 {
     if (!grid[row][col])
     {
-        if (lookuptable[row][col]==1 && remaining==1)
+        if (lookuptable[row][col]==1)
         {
-            ++counter;
+            if (remaining==1)
+			{
+				++counter;
+			}
         }
         else
         {
             if (lookuptable[row][col] <= remaining)
             {
-				grid[row][col]=true;
-
-				TakeStep(lookuptable,grid,counter,startrow,row,col+1,remaining-1);
-				TakeStep(lookuptable,grid,counter,startrow,row+1,col,remaining-1);
-				TakeStep(lookuptable,grid,counter,startrow,row,col-1,remaining-1);
-				TakeStep(lookuptable,grid,counter,startrow,row-1,col,remaining-1);
-
-				grid[row][col]=false;
+				return true;
             }
         }
     }
+    return false;
+}
+
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth)
+{
+    if (CheckStep(lookuptable,grid,counter,row,col,remaining))
+	{
+		grid.at(row).at(col)=true;
+		if (remaining>=length-depth)
+		{
+			ProduceStep(lookuptable,grid,counter,startrow,length,row,col+1,remaining-1,depth);
+			ProduceStep(lookuptable,grid,counter,startrow,length,row+1,col,remaining-1,depth);
+			ProduceStep(lookuptable,grid,counter,startrow,length,row,col-1,remaining-1,depth);
+			ProduceStep(lookuptable,grid,counter,startrow,length,row-1,col,remaining-1,depth);
+		}
+		else
+		{
+			Parameters taskparm;
+			taskparm.grid = grid;
+			taskparm.startrow = startrow;
+			taskparm.remaining = remaining-1;
+			if (!grid.at(row).at(col+1))
+			{
+				taskparm.row = row;
+				taskparm.col = col+1;
+				q.enqueue(ptok, taskparm);
+			}
+			if (!grid.at(row+1).at(col))
+			{
+				taskparm.row = row+1;
+				taskparm.col = col;
+				q.enqueue(ptok, taskparm);
+			}
+			if (!grid.at(row).at(col-1))
+			{
+				taskparm.row = row;
+				taskparm.col = col-1;
+				q.enqueue(ptok, taskparm);
+			}
+			if (!grid.at(row-1).at(col))
+			{
+				taskparm.row = row-1;
+				taskparm.col = col;
+				q.enqueue(ptok, taskparm);
+			}
+		}
+		grid.at(row).at(col)=false;
+	}
+}
+
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow,unsigned int row,unsigned int col, int remaining)
+{
+	if (CheckStep(lookuptable,grid,counter,row,col,remaining))
+	{
+		grid[row][col]=true;
+
+		TakeStep(lookuptable,grid,counter,startrow,row,col+1,remaining-1);
+		TakeStep(lookuptable,grid,counter,startrow,row+1,col,remaining-1);
+		TakeStep(lookuptable,grid,counter,startrow,row,col-1,remaining-1);
+		TakeStep(lookuptable,grid,counter,startrow,row-1,col,remaining-1);
+
+		grid[row][col]=false;
+	}
 }
 
 void IncreaseCCC(mpz_class &Incr)
@@ -165,6 +163,84 @@ mpz_class ReadCCC()
 {
     std::lock_guard<std::mutex> lock(tex);
     return CCCounter;
+}
+
+void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, unsigned int d, bool isHost)
+{
+    mpz_class counter;
+    Parameters recvparm;
+    
+    mpz_realloc2(counter.get_mpz_t(),256);
+    
+	if (isHost==1)
+	{
+		unsigned int i=0;
+
+		if (n==0)
+		{
+			n=1;
+		}
+
+		while (q.try_dequeue_from_producer(ptok, recvparm))
+		{
+			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+			if (++i%d==0)
+			{
+				std::cout << q.size_approx() << "/" << n << " " << (1.0-(static_cast<float>(q.size_approx())/static_cast<float>(n)))*100.0 << "%" << std::endl;
+			}
+		}
+	}
+	else
+	{
+		while (q.try_dequeue_from_producer(ptok, recvparm))
+		{
+			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+		}
+	}
+    IncreaseCCC(counter);
+}
+
+void ThreadDivideWork(std::vector< std::vector< int > > &lookuptable, unsigned int ReportRate)
+{
+	unsigned int queueSize = q.size_approx();
+	std::vector<std::thread> threads;
+	unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
+	unsigned concurentThreadsUsed = 0;
+
+	if (queueSize > 2512)
+	{
+		switch(concurentThreadsSupported)
+		{
+			case 0:
+				std::cout << "Request for amount of threads failed, spawning 0 additional threads for safety" <<std::endl;
+				break;
+			case 1:
+				std::cout << "This Machine reports: 1 available thread, 0 additional threads will be spawned" <<std::endl;
+				break;
+			default:
+				concurentThreadsUsed = concurentThreadsSupported-1;
+				std::cout << "This Machine reports: "<< concurentThreadsSupported << " available threads." <<std::endl;
+				std::cout << concurentThreadsUsed << " additional Threads will be spawned (main thread will also occupy one thread)." <<std::endl;
+		}
+
+
+		for (unsigned int i = 0; i<concurentThreadsUsed; ++i)
+		{
+			std::cout << "Thread " << i+1 << "/" << concurentThreadsUsed << "spawned" <<std::endl;
+			threads.emplace_back(std::thread(WorkerFunc,std::ref(lookuptable),0,0,false));
+		}
+
+		std::cout << "  Complete"<<std::endl;
+		std::cout << "Waiting for Threads to Finish..." << std::endl;
+
+	}
+
+	WorkerFunc(std::ref(lookuptable),queueSize, ReportRate, true);
+
+	for(auto& thread : threads)
+	{
+		thread.join();
+	}
 }
 
 int checkInput()
@@ -182,75 +258,46 @@ int checkInput()
     return n;
 }
 
-void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, int d, bool isHost)
+int checkArguments(int &argc, char *argv[])
 {
-    mpz_class counter;
-    Parameters recvparm;
-    
-	if (isHost==1)
+	if (argc <= 1)
 	{
-		int i=0;
-
-		if (n==0)
-		{
-			n=1;
-		}
-
-		while (q.try_dequeue_from_producer(ptok, recvparm))
-		{
-			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
-			if (++i%d==0)
-			{
-				std::cout << q.size_approx() << "/" << n << " " << (1.0-((float)q.size_approx()/(float)n))*100.0 << "%" << std::endl;
-			}
-		}
+		return checkInput();
 	}
 	else
 	{
-		while (q.try_dequeue_from_producer(ptok, recvparm))
+		std::istringstream ss(argv[1]);
+		int x;
+		if (!(ss >> x))
 		{
-			TakeStep(lookuptable,recvparm.grid,counter,recvparm.startrow,recvparm.row,recvparm.col,recvparm.remaining);
+			return checkInput();
+		}
+		else
+		{
+			return x;
 		}
 	}
-    IncreaseCCC(counter);
 }
 
 int main(int argc,char *argv[])
 {
-    int SAPlength = 0;
     int depth=7;
-    int ReportRate = 30;
+    unsigned int ReportRate = 30;
     std::ofstream outputFile;
     outputFile.open("SAPsLog.csv", std::ios::out | std::ios::app);
 
     //check if length was an argument or if it is still necessary to ask it in runtime
     if (outputFile.is_open())
     {
-        if (argc <= 1)
-        {
-            SAPlength = checkInput();
-        }
-        else
-        {
-            std::istringstream ss(argv[1]);
-            int x;
-            if (!(ss >> x))
-            {
-                SAPlength = checkInput();
-            }
-            else
-            {
-                SAPlength = x;
-            }
-        }
+        int SAPlength = checkArguments(argc, argv);
         
         std::cout << "SAP length is: " << SAPlength << std::endl << std::endl;
 		std::cout << "Initializing startup variables" << std::endl;
 
         //calculate the dimensions of the grid the program is going to walk over.
-        int width=SAPlength/2+2;
-        int height;
-        int startrow;
+        unsigned int width=static_cast<unsigned int>(SAPlength/2+2);
+        unsigned int height=0;
+        unsigned int startrow=0;
         if (SAPlength==4) //exception for length 4 because else the grid will be too small
         {
             height=4;
@@ -258,8 +305,8 @@ int main(int argc,char *argv[])
         }
         else
         {
-            height=SAPlength/2+(2+(SAPlength-6)/2);
-            startrow=(SAPlength-6)/2+1;
+            height=static_cast<unsigned int>(SAPlength/2+(2+(SAPlength-6)/2));
+            startrow=static_cast<unsigned int>((SAPlength-6)/2+1);
         }
 
         if (SAPlength>=28)
@@ -271,16 +318,13 @@ int main(int argc,char *argv[])
             ReportRate = 5;
         }
 
-        std::vector<std::thread> threads;
-        mpz_class counter;
-
         //initialize grid and set primary off-limits fields
 
 		std::cout <<width << "x" << height << " Grid initializing...";
         std::vector< std::vector< bool > > grid ( height, std::vector<bool> ( width, 0 ) );
         std::vector< std::vector< int > > lookuptable ( height, std::vector<int> ( width, 0 ) );
 
-        InitMaps(lookuptable, grid ,SAPlength);
+        InitMaps(lookuptable, grid ,static_cast<unsigned int>(SAPlength));
 
 		std::cout << "  Complete"<< std::endl;
 		printVector(grid);
@@ -292,6 +336,7 @@ int main(int argc,char *argv[])
         //Set first field to forbidden and force first step to right
         grid.at(startrow).at(1)=true;
 
+        mpz_class counter;
         ProduceStep(lookuptable,grid,counter,startrow,SAPlength,startrow,2,SAPlength-1,depth);
 
         IncreaseCCC(counter);
@@ -300,45 +345,7 @@ int main(int argc,char *argv[])
 		std::cout << "Approximately " << q.size_approx() << " items in queue" <<std::endl;
 		std::cout << "Starting Consumer Threads..."<<std::endl;
 
-        unsigned int queueSize = q.size_approx();
-
-        unsigned concurentThreadsSupported = std::thread::hardware_concurrency();
-        unsigned concurentThreadsUsed = 0;
-
-        if (queueSize > 2512)
-        {
-            switch(concurentThreadsSupported)
-            {
-                case 0:
-					std::cout << "Request for amount of threads failed, spawning 0 additional threads for safety" <<std::endl;
-                    break;
-                case 1:
-                    std::cout << "This Machine reports: 1 available thread, 0 additional threads will be spawned" <<std::endl;
-                    break;
-                default:
-                    concurentThreadsUsed = concurentThreadsSupported-1;
-					std::cout << "This Machine reports: "<< concurentThreadsSupported << " available threads." <<std::endl;
-					std::cout << concurentThreadsUsed << " additional Threads will be spawned (main thread will also occupy one thread)." <<std::endl;
-            }
-
-
-            for (unsigned int i = 0; i<concurentThreadsUsed; ++i)
-            {
-				std::cout << "Thread " << i+1 << "/" << concurentThreadsUsed << "spawned" <<std::endl;
-                threads.emplace_back(std::thread(WorkerFunc,std::ref(lookuptable),0,0,false));
-            }
-
-			std::cout << "  Complete"<<std::endl;
-			std::cout << "Waiting for Threads to Finish..." << std::endl;
-
-        }
-
-        WorkerFunc(std::ref(lookuptable),queueSize, ReportRate, true);
-
-        for(auto& thread : threads)
-        {
-            thread.join();
-        }
+        ThreadDivideWork(lookuptable,ReportRate);
         
 		std::cout << "Finished!" << std::endl << "Total Correct Paths: ";
 

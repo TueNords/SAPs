@@ -18,9 +18,9 @@ class Parameters
 {
     public:
         std::vector< std::vector< bool > > grid;
-        int startrow;
-        int row;
-        int col;
+        unsigned int startrow;
+        unsigned int row;
+        unsigned int col;
         int remaining;
 };
 
@@ -30,14 +30,17 @@ void printVector(VecT &grid);                                  //print the vecto
 //generate distance lookuptable && set primary off-limits fields 
 void InitMaps(std::vector<std::vector<int>> &lookuptable, std::vector<std::vector<bool>> &grid, const unsigned int length);       
 
-
-void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, const int &length, int row, int col, int remaining, int &depth);    //Produce queue jobs
-void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const int &startrow, int row, int col, int remaining);       //General walking function
+bool CheckStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, unsigned int row, unsigned int col, int remaining);
+void ProduceStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, const int &length,unsigned int row,unsigned int col, int remaining, int &depth);    //Produce queue jobs
+void TakeStep(std::vector< std::vector< int > > &lookuptable, std::vector<std::vector<bool>> &grid, mpz_class &counter, const unsigned int &startrow, unsigned int row, unsigned int col, int remaining);       //General walking function
 
 void IncreaseCCC(mpz_class &Incr);  //Thread-safe increase of the total counter
 mpz_class ReadCCC();                //Thread-safe read from the total counter, not absolutely necessary
 
+void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, unsigned int d, bool isHost);                      //Retrieves jobs from queue en proceeds calculating them with TakeStep if arguments given it will behave as the reporting host thread
+void ThreadDivideWork(std::vector< std::vector< int > > &lookuptable, unsigned int ReportRate);
+
 int checkInput();                       //check if the given input meets the requirements of >4 and an even number
-void WorkerFunc(std::vector< std::vector< int > > &lookuptable, unsigned int n, int d, bool isHost);                      //Retrieves jobs from queue en proceeds calculating them with TakeStep if arguments given it will behave as the reporting host thread
+int checkArguments(int &argc, char *argv[]);
 
 int main(int argc,char *argv[]);        //Main function. Variables are initialized and all parts of the code are managed.
